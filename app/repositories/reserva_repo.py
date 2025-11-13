@@ -32,11 +32,6 @@ def eliminar_reserva(db: Session, reserva_id: int):
     
     if not reserva:
         return None
-    
-    vuelo = reserva.vuelo
-    if vuelo:
-        vuelo.asientos_disponibles += 1
-        db.commit()
         
     db.delete(reserva)
     db.commit()

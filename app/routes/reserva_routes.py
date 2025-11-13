@@ -16,12 +16,16 @@ def listar_reservas(
 ):
     if current_user.rol == "admin":
         return reserva_service.listar_reservas(db)
-    return reserva_service.listar_reservas(db, usuario_id=current_user.id)
+    return reserva_service.listar_reservas(db, current_user.id)
 
 # === GET /reservas/{id} ===
 @router.get("/{id}", response_model=ReservaRead)
-def obtener_reserva(id: int, db: Session = Depends(get_db)):
-    return reserva_service.obtener_reserva(db, id)
+def obtener_reserva(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    return reserva_service.obtener_reserva(db, id, current_user)
 
 # === POST /reservas/ ===
 @router.post("/", response_model=ReservaRead, status_code=status.HTTP_201_CREATED)
@@ -40,7 +44,7 @@ def actualizar_reserva(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user)
 ):
-    return reserva_service.actualizar_reserva(db, id, datos)
+    return reserva_service.actualizar_reserva(db, id, datos, current_user)
 
 # === POST /reservas/{id}/confirmar ===
 @router.post("/{id}/confirmar", response_model=ReservaRead)

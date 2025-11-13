@@ -1,0 +1,10 @@
+from sqlalchemy import Column, Integer, String, Text, Numeric
+from app.db.database import Base
+
+class Servicio(Base):
+    __tablename__ = "servicios"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String(100), nullable=False)
+    descripcion = Column(Text, nullable=True)
+    precio = Column(Numeric(10, 2), nullable=False)
