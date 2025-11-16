@@ -7,6 +7,7 @@ from app.routes import usuario_routes
 from app.routes import vuelo_routes
 from app.routes import reserva_routes
 from app.routes import servicio_routes
+from app.routes import pago_routes
 
 
 # Crear tablas automáticamente
@@ -51,6 +52,7 @@ app.include_router(usuario_routes.router)
 app.include_router(vuelo_routes.router)
 app.include_router(reserva_routes.router)
 app.include_router(servicio_routes.router)
+app.include_router(pago_routes.router)
 
 @app.get("/")
 def root():

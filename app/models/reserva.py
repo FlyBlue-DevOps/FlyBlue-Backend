@@ -18,3 +18,5 @@ class Reserva(Base):
     # Relaciones
     usuario = relationship("Usuario", back_populates="reservas")
     vuelo = relationship("Vuelo", back_populates="reservas")
+    servicios_reserva = relationship("ReservaServicio", back_populates="reserva", cascade="all, delete-orphan")
+    pago = relationship("Pago", back_populates="reserva", uselist=False)

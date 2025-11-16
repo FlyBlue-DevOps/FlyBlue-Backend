@@ -1,5 +1,7 @@
 from pydantic import BaseModel
+from pydantic import Field
 from datetime import datetime
+from app.dto.reserva_servicio_dto import ReservaServicioRead
 
 class ReservaBase(BaseModel):
     vuelo_id: int
@@ -22,8 +24,9 @@ class ReservaRead(BaseModel):
     fecha_reserva: datetime
     estado: str
     clase: str
-    asiento: str | None
+    asiento: str
     total: float
+    servicios: list[ReservaServicioRead] = Field(default_factory=list, alias="servicios_reserva")
 
     class Config:
         orm_mode = True

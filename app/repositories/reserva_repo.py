@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import subqueryload
 from app.models.reserva import Reserva
+from app.models.reserva_servicio import ReservaServicio
 from app.dto.reserva_dto import ReservaCreate, ReservaUpdate
 
 def listar_reservas(db: Session, usuario_id: int = None):
@@ -8,7 +10,15 @@ def listar_reservas(db: Session, usuario_id: int = None):
     return db.query(Reserva).all()
 
 def obtener_reserva(db: Session, reserva_id: int):
-    return db.query(Reserva).filter(Reserva.id == reserva_id).first()
+    reserva = (
+        db.query(Reserva)
+        .options(
+            subqueryload(Reserva.servicios_reserva).subqueryload(ReservaServicio.servicio)
+        )
+        .filter(Reserva.id == reserva_id)
+        .first()
+    )
+    return reserva
 
 def crear_reserva(db: Session, datos: ReservaCreate, usuario_id: int):
     nueva = Reserva(usuario_id=usuario_id, **datos.dict())
