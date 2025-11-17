@@ -15,4 +15,4 @@ class Usuario(Base):
 
     # Relaciones
     reservas = relationship("Reserva", back_populates="usuario", cascade="all, delete-orphan")
-    #notificaciones = relationship("Notificacion", back_populates="usuario", cascade="all, delete-orphan")
+    notificaciones = relationship("Notificacion", back_populates="usuario", cascade="all, delete-orphan")
