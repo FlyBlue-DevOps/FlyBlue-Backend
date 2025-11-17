@@ -16,7 +16,7 @@ class LoginRequest(BaseModel):
     contrasena: str
 
 class RegisterRequest(BaseModel):
-    id: int                 # tu ID nacional (no autoincremental)
+    id: int                
     nombre: str
     email: EmailStr
     contrasena: str

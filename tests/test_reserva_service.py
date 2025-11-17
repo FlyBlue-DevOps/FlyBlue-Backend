@@ -246,7 +246,7 @@ def test_obtener_reserva_existente(db_session, create_usuario, create_vuelo, usu
     )
     reserva_creada = reserva_service.crear_reserva(db_session, datos, usuario.id)
     
-    reserva = reserva_service.obtener_reserva(db_session, reserva_creada.id)
+    reserva = reserva_service.obtener_reserva(db_session, reserva_creada.id, usuario)
     
     assert reserva is not None
     assert reserva.id == reserva_creada.id
@@ -260,7 +260,9 @@ def test_obtener_reserva_inexistente(db_session):
     Debe lanzar HTTPException con código 404.
     """
     with pytest.raises(HTTPException) as exc_info:
-        reserva_service.obtener_reserva(db_session, 99999)
+        fake_user = type("User", (), {"rol": "admin"})()
+        reserva_service.obtener_reserva(db_session, 99999, fake_user)
+
     
     assert exc_info.value.status_code == 404
     assert "no encontrada" in exc_info.value.detail.lower()
@@ -285,7 +287,7 @@ def test_actualizar_reserva_estado(db_session, create_usuario, create_vuelo, usu
     
     # Actualizar estado
     actualizacion = ReservaUpdate(estado="confirmada")
-    reserva_actualizada = reserva_service.actualizar_reserva(db_session, reserva.id, actualizacion)
+    reserva_actualizada = reserva_service.actualizar_reserva(db_session, reserva.id, actualizacion, usuario)
     
     assert reserva_actualizada.estado == "confirmada"
 
@@ -310,7 +312,7 @@ def test_actualizar_reserva_clase_y_asiento(db_session, create_usuario, create_v
         clase="ejecutiva",
         asiento="1B"
     )
-    reserva_actualizada = reserva_service.actualizar_reserva(db_session, reserva.id, actualizacion)
+    reserva_actualizada = reserva_service.actualizar_reserva(db_session, reserva.id, actualizacion, usuario)
     
     assert reserva_actualizada.clase == "ejecutiva"
     assert reserva_actualizada.asiento == "1B"
@@ -395,7 +397,7 @@ def test_eliminar_reserva_restaura_asientos(db_session, create_usuario, create_v
     assert asientos_despues_reserva == asientos_iniciales - 1
     
     # Eliminar reserva (debe restaurar asientos)
-    reserva_service.eliminar_reserva(db_session, reserva.id)
+    reserva_service.eliminar_reserva(db_session, reserva.id, usuario)
     
     db_session.refresh(vuelo)
     assert vuelo.asientos_disponibles == asientos_iniciales  # Asientos restaurados
@@ -408,7 +410,9 @@ def test_eliminar_reserva_inexistente(db_session):
     Debe lanzar HTTPException con código 404.
     """
     with pytest.raises(HTTPException) as exc_info:
-        reserva_service.eliminar_reserva(db_session, 99999)
+        fake_user = type("User", (), {"rol": "admin"})()
+        reserva_service.eliminar_reserva(db_session, 99999, fake_user)
+
     
     assert exc_info.value.status_code == 404
     assert "no encontrada" in exc_info.value.detail.lower()
@@ -451,8 +455,8 @@ def test_eliminar_multiples_reservas_restaura_correctamente(db_session, create_u
     assert vuelo.asientos_disponibles == asientos_iniciales - 2
     
     # Eliminar ambas reservas
-    reserva_service.eliminar_reserva(db_session, reserva1.id)
-    reserva_service.eliminar_reserva(db_session, reserva2.id)
+    reserva_service.eliminar_reserva(db_session, reserva1.id, usuario1)
+    reserva_service.eliminar_reserva(db_session, reserva2.id, usuario2)
     
     db_session.refresh(vuelo)
     assert vuelo.asientos_disponibles == asientos_iniciales  # Todos los asientos restaurados

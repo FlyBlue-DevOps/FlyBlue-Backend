@@ -13,6 +13,8 @@ from fastapi.testclient import TestClient
 
 from app.db.database import Base, get_db
 from app.core.security import get_password_hash
+from app.models.notificacion import Notificacion
+
 
 # CRÍTICO: Importar TODOS los modelos ANTES de crear las tablas
 # Esto asegura que Base.metadata tenga conocimiento de todas las tablas
@@ -246,3 +248,114 @@ def get_auth_headers(client, create_usuario, usuario_cliente_data):
         return {"Authorization": f"Bearer {token}"}
     
     return _get_headers
+
+@pytest.fixture
+def create_servicio(db_session):
+    """
+    Helper para crear servicios adicionales en la BD de test.
+
+    Uso:
+        servicio = create_servicio({
+            "nombre": "Wifi",
+            "descripcion": "Internet",
+            "precio": 20000
+        })
+    """
+    from app.models.servicio import Servicio
+
+    def _create_servicio(data: dict):
+        servicio = Servicio(**data)
+        db_session.add(servicio)
+        db_session.commit()
+        db_session.refresh(servicio)
+        return servicio
+
+    return _create_servicio
+
+@pytest.fixture
+def create_reserva(db_session):
+    """
+    Helper para crear reservas en la BD de test.
+
+    Uso:
+        reserva = create_reserva({
+            "usuario_id": ...,
+            "vuelo_id": ...,
+            "clase": "económica",
+            "asiento": "12A",
+            "total": 150000.0
+        })
+    """
+    from app.models.reserva import Reserva
+
+    def _create_reserva(data: dict):
+        reserva = Reserva(**data)
+        db_session.add(reserva)
+        db_session.commit()
+        db_session.refresh(reserva)
+        return reserva
+
+    return _create_reserva
+
+@pytest.fixture
+def create_pago(db_session):
+    """
+    Helper para crear pagos en la BD de test.
+
+    Uso:
+        pago = create_pago({
+            "reserva_id": 1,
+            "monto": 100000,
+            "metodo": "tarjeta",
+            "estado": "pendiente"
+        })
+    """
+    from app.models.pago import Pago
+
+    def _create_pago(data: dict):
+        pago = Pago(**data)
+        db_session.add(pago)
+        db_session.commit()
+        db_session.refresh(pago)
+        return pago
+
+    return _create_pago
+
+@pytest.fixture
+def create_notificacion(db_session):
+    """
+    Fixture para crear notificaciones correctamente relacionadas con un usuario válido.
+    Si el usuario no existe, se crea automáticamente.
+    """
+
+    def _create_notificacion(data: dict):
+        usuario_id = data.get("usuario_id")
+
+        # Verificar si el usuario existe, si no, crearlo
+        usuario = db_session.query(Usuario).filter(Usuario.id == usuario_id).first()
+        if not usuario:
+            nuevo_usuario = Usuario(
+                id=usuario_id,
+                nombre="Usuario Test",
+                email=f"user{usuario_id}@test.com",
+                contrasena="test"
+            )
+            db_session.add(nuevo_usuario)
+            db_session.commit()
+            db_session.refresh(nuevo_usuario)
+
+        nueva_notificacion = Notificacion(
+            usuario_id=usuario_id,
+            titulo=data.get("titulo"),
+            mensaje=data.get("mensaje"),
+            tipo=data.get("tipo", "info"),
+            leido=False
+        )
+
+        db_session.add(nueva_notificacion)
+        db_session.commit()
+        db_session.refresh(nueva_notificacion)
+
+        return nueva_notificacion
+
+    return _create_notificacion
