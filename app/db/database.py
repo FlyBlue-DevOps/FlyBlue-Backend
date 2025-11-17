@@ -10,8 +10,16 @@ load_dotenv()
 # Leer la URL de la base de datos del entorno
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+# Si no hay DATABASE_URL (sin Postgres), usar SQLite temporal
+if not DATABASE_URL:
+    print("⚠️ No se encontró DATABASE_URL, usando SQLite temporal en memoria.")
+    DATABASE_URL = "sqlite:///:memory:"
+print(f"🔗 Base de datos conectada a: {DATABASE_URL}")
+
 # Crear el motor de conexión
-engine = create_engine(DATABASE_URL)
+engine = create_engine(DATABASE_URL,
+    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+)
 
 # Crear una sesión local para interactuar con la BD
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
