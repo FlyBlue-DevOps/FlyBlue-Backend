@@ -45,21 +45,9 @@ jobs:
           cache-from: type=registry,ref=guimelbaena88/flyblue-backend:latest
           cache-to: type=inline
 
-      - name: Build and push Frontend Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./frontend
-          file: ./frontend/dockerFile
-          push: true
-          tags: |
-            guimelbaena88/flyblue-frontend:latest
-            guimelbaena88/flyblue-frontend:${{ github.sha }}
-          cache-from: type=registry,ref=guimelbaena88/flyblue-frontend:latest
-          cache-to: type=inline
-
       - name: Images digest
         run: |
-          echo "✅ Backend y Frontend publicados en Docker Hub exitosamente"
+          echo "Backend publicado en Docker Hub exitosamente"
           echo "Backend: guimelbaena88/flyblue-backend:latest"
           echo "Frontend: guimelbaena88/flyblue-frontend:latest"
 
