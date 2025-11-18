@@ -4,13 +4,13 @@ Incluye autenticación segura, arquitectura limpia por capas y un conjunto compl
 
 ## Descripción
 FlyBlue Backend es la API del sistema FlyBlue, encargada de:
-
+```
 ✔ Autenticación mediante JWT
 ✔ Gestión de usuarios
 ✔ Administración de vuelos
 ✔ Manejo de reservas relacionadas entre usuarios y vuelos
 ✔ Validaciones de disponibilidad, seguridad y lógica de negocio
-
+```
 Está diseñada siguiendo principios de:
 
 - Arquitectura por capas (routes → services → repositories → models)
@@ -32,6 +32,7 @@ Está diseñada siguiendo principios de:
 | Entorno           | Python 3.10+            |
 
 ## Arquitectura (back) del Proyecto
+```
 app/
 │── core/          → Seguridad, autenticación, utilidades JWT
 │── db/            → Conexión y configuración de la base de datos
@@ -41,7 +42,7 @@ app/
 │── services/      → Lógica de negocio
 │── routes/        → Endpoints expuestos al cliente
 └── main.py        → Punto de entrada de la aplicación
-
+```
 
 ## Instalación y Ejecución
 ### 1️Clonar el repositorio
