@@ -5,18 +5,38 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi.openapi.utils import get_openapi
 from app.db.database import Base, engine
 from app.routes import auth_routes, usuario_routes, vuelo_routes, reserva_routes
+import logging
+
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Crear tablas automáticamente
 Base.metadata.create_all(bind=engine)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Instrumentator().instrument(app).expose(app)
+    logger.info("🚀 Starting FlyBlue Backend...")
+    # Configurar Prometheus metrics
+    instrumentator = Instrumentator(
+        should_group_status_codes=False,
+        should_ignore_untemplated=True,
+        should_respect_env_var=True,
+        should_instrument_requests_inprogress=True,
+        excluded_handlers=[".*admin.*", "/metrics"],
+        env_var_name="ENABLE_METRICS",
+        inprogress_name="inprogress",
+        inprogress_labels=True,
+    )
+    instrumentator.instrument(app).expose(app, endpoint="/metrics")
+    logger.info("✅ Prometheus metrics enabled at /metrics")
     yield
+    logger.info("🛑 Shutting down FlyBlue Backend...")
 
 app = FastAPI(
     title="FlyBlue API",
     version="1.0.0",
+    description="API REST para sistema de reservas de vuelos FlyBlue",
     lifespan=lifespan       
 )
 
@@ -56,3 +76,7 @@ app.include_router(reserva_routes.router)
 @app.get("/")
 def root():
     return {"message": "🚀 FlyBlue backend running inside Docker!"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "service": "FlyBlue Backend", "version": "1.0.0"}
