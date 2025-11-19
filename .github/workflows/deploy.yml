@@ -49,7 +49,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
-          file: ./frontend/dockerFile
+          file: ./frontend/Dockerfile
           push: true
           tags: |
             guimelbaena88/flyblue-frontend:latest
