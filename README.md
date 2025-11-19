@@ -46,19 +46,23 @@ app/
 
 ## Instalación y Ejecución
 ### 1️Clonar el repositorio
-git clone https://github.com/tu-repo/flyblue-backend.git
+```
+git clone https://github.com/FlyBlue-DevOps/FlyBlue-Backend.git
 cd flyblue-backend
-
+```
 ### 2️⃣ Crear y activar entorno virtual
+```
 python -m venv venv
 .\venv\Scripts\activate
-
+```
 ### 3️⃣ Instalar dependencias
+```
 pip install -r requirements.txt
-
+```
 ### 4️⃣ Ejecutar el servidor local
+```
 uvicorn app.main:app --reload
-
+```
 
 ## Requisitos
 - Python 3.10+ (recomendado)
@@ -101,10 +105,11 @@ docker-compose up --build
 ## Cómo ejecutar los tests
 
 ### Crear y activar el entorno virtual:
+```
 python -m venv venv
 .\venv\Scripts\activate
 pip install -r requirements.txt
-
+```
 ### Ejecutar todos los tests
 ```
 pytest -v
