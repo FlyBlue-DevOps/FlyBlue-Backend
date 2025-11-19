@@ -101,8 +101,8 @@ jobs:
           EOF
       - name: Copiar archivos de configuración a EC2
         run: |
-          scp -i ~/.ssh/ec2_key.pem backend/docker-compose.yml ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/flyblue-production/docker-compose.yml
-          scp -i ~/.ssh/ec2_key.pem backend/prometheus.yml ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/flyblue-production/prometheus.yml
+          scp -i ~/.ssh/ec2_key.pem docker-compose.yml ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/flyblue-production/docker-compose.yml
+          scp -i ~/.ssh/ec2_key.pem prometheus.yml ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/flyblue-production/prometheus.yml
       - name: Deploy en EC2
         run: |
           ssh -i ~/.ssh/ec2_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
