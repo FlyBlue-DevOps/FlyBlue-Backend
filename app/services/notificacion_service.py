@@ -22,8 +22,12 @@ def obtener_notificacion(db: Session, notificacion_id: int, current_user: Usuari
 
     return notif
 
+def crear_notificacion(db, datos):
+    # Antes de crear la notificación, validar usuario
+    usuario = db.query(Usuario).filter(Usuario.id == datos.usuario_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-def crear_notificacion(db: Session, datos: NotificacionCreate):
     return notificacion_repo.crear_notificacion(db, datos)
 
 
