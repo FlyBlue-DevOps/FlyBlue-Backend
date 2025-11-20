@@ -1,0 +1,142 @@
+name: Build, Push y Deploy a EC2
+
+on:
+  push:
+    branches:
+      - main
+      - monitoreo-despliegue
+  repository_dispatch:
+    types: [frontend-updated]
+
+
+jobs:
+  build-and-push:
+    name: Build y Push Backend y Frontend a Docker Hub
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Backend code
+        uses: actions/checkout@v4
+        with:
+          path: backend
+
+      - name: Checkout Frontend code
+        uses: actions/checkout@v4
+        with:
+          repository: FlyBlue-DevOps/FlyBlue-Frontend
+          path: frontend
+          token: ${{ secrets.TOKEN_GITHUB }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Backend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            guimelbaena88/flyblue-backend:latest
+            guimelbaena88/flyblue-backend:${{ github.sha }}
+          cache-from: type=registry,ref=guimelbaena88/flyblue-backend:latest
+          cache-to: type=inline
+
+      - name: Build and push Frontend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: |
+            guimelbaena88/flyblue-frontend:latest
+            guimelbaena88/flyblue-frontend:${{ github.sha }}
+          cache-from: type=registry,ref=guimelbaena88/flyblue-frontend:latest
+          cache-to: type=inline
+
+
+      - name: Images digest
+        run: |
+          echo "Backend publicado en Docker Hub exitosamente"
+          echo "Backend: guimelbaena88/flyblue-backend:latest"
+          echo "Frontend: guimelbaena88/flyblue-frontend:latest"
+  deploy-to-ec2:
+    name: Deploy a EC2
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+
+      - name: Configurar SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2_key.pem
+          chmod 600 ~/.ssh/ec2_key.pem
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+      - name: Crear archivos de configuración en EC2
+        run: |
+          ssh -i ~/.ssh/ec2_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            # Crear directorio si no existe
+            mkdir -p ~/flyblue-production
+            cd ~/flyblue-production
+            
+            # Crear archivo .env con variables de producción
+            cat > .env << 'ENVFILE'
+          DATABASE_URL=postgresql+psycopg2://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/${{ secrets.POSTGRES_DB }}
+          SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
+          ALGORITHM=HS256
+          ACCESS_TOKEN_EXPIRE_MINUTES=60
+          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+          GRAFANA_USER=${{ secrets.GRAFANA_USER }}
+          GRAFANA_PASSWORD=${{ secrets.GRAFANA_PASSWORD }}
+          ENVFILE
+          EOF
+      - name: Copiar archivos de configuración a EC2
+        run: |
+          scp -i ~/.ssh/ec2_key.pem docker-compose.yml ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/flyblue-production/docker-compose.yml
+          scp -i ~/.ssh/ec2_key.pem prometheus.yml ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/flyblue-production/prometheus.yml
+      - name: Deploy en EC2
+        run: |
+          ssh -i ~/.ssh/ec2_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cd ~/flyblue-production
+            
+            # Pull de las últimas imágenes
+            docker-compose pull backend frontend
+            
+            # Reiniciar servicios
+            docker-compose up -d
+            
+            # Limpiar imágenes antiguas
+            docker image prune -f
+            
+            # Verificar estado
+            echo "===== Estado de los contenedores ====="
+            docker-compose ps
+            
+            # Verificar health del backend
+            echo "===== Verificando health check ====="
+            sleep 5
+            curl -f http://localhost:8000/health || echo "⚠️ Health check backend falló"
+            
+            # Verificar frontend
+            echo "===== Verificando frontend ====="
+            curl -f http://localhost:80 || echo "⚠️ Health check frontend falló"
+          EOF
+      - name: Notificar resultado
+        run: |
+          echo "¡Despliegue completado exitosamente en EC2!"
+          echo "Frontend: http://${{ secrets.EC2_HOST }}"
+          echo "Backend: http://${{ secrets.EC2_HOST }}:8000"
+          echo "Prometheus: http://${{ secrets.EC2_HOST }}:9090"
+          echo "Grafana: http://${{ secrets.EC2_HOST }}:3000"
