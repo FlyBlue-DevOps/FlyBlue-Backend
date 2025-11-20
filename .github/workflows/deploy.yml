@@ -19,6 +19,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: backend
+          ref: main
 
       - name: Checkout Frontend code
         uses: actions/checkout@v4
