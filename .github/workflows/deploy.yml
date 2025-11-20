@@ -5,6 +5,9 @@ on:
     branches:
       - main
       - monitoreo-despliegue
+  repository_dispatch:
+    types: [frontend-updated]
+
 
 jobs:
   build-and-push:
