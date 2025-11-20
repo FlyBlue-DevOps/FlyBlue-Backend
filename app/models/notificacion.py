@@ -1,4 +1,4 @@
-from sqlalchemy import Column, BigInteger, String, Text, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.db.database import Base
@@ -6,8 +6,8 @@ from app.db.database import Base
 class Notificacion(Base):
     __tablename__ = "notificaciones"
 
-    id = Column(BigInteger, primary_key=True, index=True)
-    usuario_id = Column(BigInteger, ForeignKey("usuarios.id"), nullable=False)
+    id = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
 
     titulo = Column(String(50), nullable=False)
     mensaje = Column(Text, nullable=False)
