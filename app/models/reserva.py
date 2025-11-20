@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Float, ForeignKey
+from sqlalchemy import Column, BigInteger, String, DateTime, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.db.database import Base
@@ -6,9 +6,9 @@ from app.db.database import Base
 class Reserva(Base):
     __tablename__ = "reservas"
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-    vuelo_id = Column(Integer, ForeignKey("vuelos.id"), nullable=False)
+    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
+    usuario_id = Column(BigInteger, ForeignKey("usuarios.id"), nullable=False)
+    vuelo_id = Column(BigInteger, ForeignKey("vuelos.id"), nullable=False)
     fecha_reserva = Column(DateTime, default=datetime.utcnow)
     estado = Column(String(20), default="pendiente")
     clase = Column(String(20))
