@@ -1,99 +1,86 @@
+version: "3.9"
+
 services:
-  db:
-    image: postgres:16
-    container_name: flyblue_db
-    restart: always
+
+  postgres:
+    image: postgres:15
+    container_name: flyblue_postgres
     environment:
       POSTGRES_USER: flyblue_user
       POSTGRES_PASSWORD: flyblue_pass
       POSTGRES_DB: flyblue_db
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
     networks:
-      - flyblue-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U flyblue_user -d flyblue_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - monitoring
 
   backend:
-    build: .
+    image: guimelbaena88/flyblue-backend:latest
     container_name: flyblue_backend
-    restart: always
-    env_file:
-      - path: .env
-        required: false
+    environment:
+      DATABASE_URL: postgresql+psycopg2://flyblue_user:flyblue_pass@postgres:5432/flyblue_db
+      SECRET_KEY: mi_clave_super_segura_1234!
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 60
     ports:
       - "8000:8000"
     depends_on:
-      db:
-        condition: service_healthy
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      - postgres
     networks:
-      - flyblue-network
+      - monitoring
+
+  frontend:
+    image: guimelbaena88/flyblue-frontend:latest
+    container_name: flyblue_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - monitoring
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus
     container_name: flyblue_prometheus
-    restart: always
     ports:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--web.enable-lifecycle'
     networks:
-      - flyblue-network
+      - monitoring
     depends_on:
       - backend
+      - node-exporter
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana
     container_name: flyblue_grafana
-    restart: always
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_USERS_ALLOW_SIGN_UP=false
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
     volumes:
       - grafana_data:/var/lib/grafana
-    networks:
-      - flyblue-network
     depends_on:
       - prometheus
+    networks:
+      - monitoring
 
   node-exporter:
-    image: prom/node-exporter:latest
+    image: prom/node-exporter
     container_name: flyblue_node_exporter
-    restart: always
     ports:
       - "9100:9100"
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     networks:
-      - flyblue-network
+      - monitoring
+
+networks:
+  monitoring:
+    driver: bridge
 
 volumes:
   postgres_data:
-  prometheus_data:
   grafana_data:
-
-networks:
-  flyblue-network:
-    driver: bridge
